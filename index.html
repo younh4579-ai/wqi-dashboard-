@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+   <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -12,23 +13,23 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #f4f8fc; color: #1a2a3a; font-family: 'Noto Sans KR', sans-serif; }
 
-   header {
-  background: #fff; border-bottom: 2px solid #e0eaf4;
-  padding: 0 1rem; height: auto; min-height: 64px;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 999;
-  box-shadow: 0 2px 12px rgba(0,100,200,0.07);
-  flex-wrap: wrap; gap: 0.5rem; padding: 0.8rem 1rem;
-}
-.header-title { font-size: 0.95rem; font-weight: 900; color: #0070cc; }
-.header-sub { font-size: 0.65rem; color: #7a9ab8; }
-.live-badge {
-  font-size: 0.7rem; color: #00aa6e;
-  background: #e6faf4; padding: 4px 10px;
-  border-radius: 20px; border: 1px solid #00aa6e;
-  display: flex; align-items: center; gap: 5px;
-  white-space: nowrap;
-}
+    header {
+      background: #fff; border-bottom: 2px solid #e0eaf4;
+      padding: 0 2rem; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 999;
+      box-shadow: 0 2px 12px rgba(0,100,200,0.07);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-icon { font-size: 2rem; }
+    .header-title { font-size: 1.1rem; font-weight: 900; color: #0070cc; }
+    .header-sub { font-size: 0.72rem; color: #7a9ab8; }
+    .live-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem; color: #00aa6e;
+      background: #e6faf4; padding: 4px 12px;
+      border-radius: 20px; border: 1px solid #00aa6e;
+    }
     .live-dot { width: 7px; height: 7px; background: #00aa6e; border-radius: 50%; animation: blink 1.5s infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
@@ -346,12 +347,11 @@
     if (!keyword) {
       filteredData = allData;
     } else {
-     filteredData = allData.filter(d =>
-  (d.PT_NM||'').includes(keyword) ||
-  (d.ADDR||'').includes(keyword) ||
-  (d.ORG_NM||'').includes(keyword) ||
-  (d.PT_NO||'').includes(keyword)
-);
+      filteredData = allData.filter(d =>
+        (d.PT_NM||'').includes(keyword) ||
+        (d.ADDR||'').includes(keyword) ||
+        (d.ORG_NM||'').includes(keyword)
+      );
     }
     document.getElementById('search-count').textContent =
       keyword ? `${filteredData.length}개 결과` : `전체 ${allData.length}개`;

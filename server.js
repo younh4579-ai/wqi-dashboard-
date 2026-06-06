@@ -32,7 +32,7 @@ async function loadData() {
 
   const pagePromises = [];
   for (let page = 2; page <= totalPages; page++) {
-    const url = `${BASE}?numOfRows=100&pageNo=${page}&serviceKey=${API_KEY}&resultType=json&wmyrList=2023`;
+    const url = `${BASE}?numOfRows=100&pageNo=${page}&serviceKey=${API_KEY}&resultType=json&wmyrList=2026`;
     pagePromises.push(
       fetch(url)
         .then(r => r.json())

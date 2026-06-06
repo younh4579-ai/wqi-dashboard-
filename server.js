@@ -53,8 +53,7 @@ async function loadData() {
       const pages = await Promise.all(pagePromises);
       pages.forEach(page => results.push(...page));
 
-      console.log(`✅ ${year}년 데이터 로드 완료: ${results.length}건 캐시됨`);
-      break;
+     console.log(`✅ ${year}년 데이터 로드 완료: ${results.length}건 캐시됨`);
 
     } catch(e) {
       console.warn(`${year}년 실패:`, e.message);

@@ -16,7 +16,7 @@ async function loadData() {
   console.log('전국 수질 데이터 로딩 시작...');
   const results = [];
 
-  const firstUrl = `${BASE}?numOfRows=100&pageNo=1&serviceKey=${API_KEY}&resultType=json&wmyrList=2025`;
+  const firstUrl = `${BASE}?numOfRows=100&pageNo=1&serviceKey=${API_KEY}&resultType=json&wmyrList=2024`;
   const firstRes  = await fetch(firstUrl);
   const firstData = await firstRes.json();
   const totalCount = parseInt(firstData?.getWaterMeasuringList?.totalCount || 0);
@@ -32,7 +32,7 @@ async function loadData() {
 
   const pagePromises = [];
   for (let page = 2; page <= totalPages; page++) {
-    const url = `${BASE}?numOfRows=100&pageNo=${page}&serviceKey=${API_KEY}&resultType=json&wmyrList=2023`;
+    const url = `${BASE}?numOfRows=100&pageNo=${page}&serviceKey=${API_KEY}&resultType=json&wmyrList=2024`;
     pagePromises.push(
       fetch(url)
         .then(r => r.json())

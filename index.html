@@ -346,11 +346,12 @@
     if (!keyword) {
       filteredData = allData;
     } else {
-      filteredData = allData.filter(d =>
-        (d.PT_NM||'').includes(keyword) ||
-        (d.ADDR||'').includes(keyword) ||
-        (d.ORG_NM||'').includes(keyword)
-      );
+     filteredData = allData.filter(d =>
+  (d.PT_NM||'').includes(keyword) ||
+  (d.ADDR||'').includes(keyword) ||
+  (d.ORG_NM||'').includes(keyword) ||
+  (d.PT_NO||'').includes(keyword)
+);
     }
     document.getElementById('search-count').textContent =
       keyword ? `${filteredData.length}개 결과` : `전체 ${allData.length}개`;

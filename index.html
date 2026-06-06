@@ -473,7 +473,7 @@
     data.forEach((d,idx) => {
       const lat = toDecimal(d.LAT_DGR,d.LAT_MIN,d.LAT_SEC);
       const lng = toDecimal(d.LON_DGR,d.LON_MIN,d.LON_SEC);
-      if (isNaN(lat)||isNaN(lng)||lat<33||lat>39||lng<124||lng>132) return;
+     if (isNaN(lat)||isNaN(lng)||lat<34.5||lat>38.5||lng<126||lng>130) return;
 
       const wqi = calcWQI(d);
       const gr  = getGrade(wqi);

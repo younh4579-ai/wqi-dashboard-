@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수질 오염 지수 (WQI) 대시보드</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f4f8fc; color: #1a2a3a; font-family: 'Noto Sans KR', sans-serif; }
+
+    header {
+      background: #fff; border-bottom: 2px solid #e0eaf4;
+      padding: 0 2rem; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 999;
+      box-shadow: 0 2px 12px rgba(0,100,200,0.07);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-icon { font-size: 2rem; }
+    .header-title { font-size: 1.1rem; font-weight: 900; color: #0070cc; }
+    .header-sub { font-size: 0.72rem; color: #7a9ab8; }
+    .live-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem; color: #00aa6e;
+      background: #e6faf4; padding: 4px 12px;
+      border-radius: 20px; border: 1px solid #00aa6e;
+    }
+    .live-dot { width: 7px; height: 7px; background: #00aa6e; border-radius: 50%; animation: blink 1.5s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .section-title {
+      font-size: 1rem; font-weight: 700; color: #0070cc;
+      margin-bottom: 1rem; padding-left: 10px;
+      border-left: 4px solid #0070cc;
+    }
+
+    .loading-box {
+      background: #fff; border: 1.5px solid #e0eaf4;
+      border-radius: 14px; padding: 3rem;
+      text-align: center; color: #7a9ab8; margin-bottom: 1.5rem;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #e0eaf4; border-top-color: #0070cc;
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      background: #fff0f0; border: 1.5px solid #ffcccc;
+      border-radius: 12px; padding: 1.5rem;
+      color: #cc0000; font-size: 0.85rem;
+      margin-bottom: 1.5rem; line-height: 1.8;
+    }
+
+    /* 검색창 */
+    .search-box {
+      background: #fff; border: 1.5px solid #e0eaf4;
+      border-radius: 14px; padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex; gap: 0.8rem; align-items: center;
+      box-shadow: 0 2px 8px rgba(0,100,200,0.05);
+    }
+    .search-box input {
+      flex: 1; border: 1.5px solid #e0eaf4;
+      border-radius: 10px; padding: 10px 16px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 0.9rem; outline: none;
+      transition: border 0.2s;
+    }
+    .search-box input:focus { border-color: #0070cc; }
+    .search-box button {
+      background: #0070cc; color: #fff;
+      border: none; border-radius: 10px;
+      padding: 10px 20px; font-family: 'Noto Sans KR', sans-serif;
+      font-size: 0.9rem; font-weight: 700; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .search-box button:hover { background: #005bb5; }
+    .search-count { font-size: 0.78rem; color: #7a9ab8; white-space: nowrap; }
+
+    .wqi-score-box {
+      background: #fff; border: 2px solid #0070cc;
+      border-radius: 20px; padding: 2rem;
+      margin-bottom: 1.5rem; text-align: center;
+      box-shadow: 0 4px 20px rgba(0,112,204,0.08);
+    }
+    .wqi-score { font-size: 5rem; font-weight: 900; color: #0070cc; line-height: 1; }
+    .wqi-label { font-size: 0.9rem; color: #7a9ab8; margin-top: 0.5rem; }
+    .wqi-grade {
+      display: inline-block; margin-top: 1rem;
+      padding: 5px 24px; border-radius: 20px; font-weight: 700; font-size: 1rem;
+    }
+    .grade-good   { background:#e6faf4; color:#00aa6e; border:1.5px solid #00aa6e; }
+    .grade-normal { background:#e8f4ff; color:#0070cc; border:1.5px solid #0070cc; }
+    .grade-bad    { background:#fff8e6; color:#e08000; border:1.5px solid #e08000; }
+    .grade-danger { background:#fff0f0; color:#e03030; border:1.5px solid #e03030; }
+
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 1rem; margin-bottom: 2rem;
+    }
+    @media(max-width:700px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:450px){.kpi-grid{grid-template-columns:1fr}}
+
+    .kpi-card {
+      background: #fff; border: 1.5px solid #e0eaf4;
+      border-radius: 14px; padding: 1.2rem;
+      box-shadow: 0 2px 8px rgba(0,100,200,0.05);
+      transition: transform 0.2s;
+    }
+    .kpi-card:hover { transform: translateY(-3px); }
+    .kpi-name { font-size: 0.75rem; color: #7a9ab8; margin-bottom: 0.4rem; }
+    .kpi-value { font-size: 1.6rem; font-weight: 900; color: #0070cc; }
+    .kpi-unit { font-size: 0.75rem; color: #aac0d4; font-weight: 400; }
+    .kpi-desc { font-size: 0.7rem; color: #aac0d4; margin-top: 4px; }
+    .kpi-status {
+      display: inline-block; font-size: 0.68rem;
+      padding: 2px 8px; border-radius: 10px; margin-top: 6px;
+    }
+
+    #map {
+      width: 100%; height: 420px;
+      border-radius: 16px; border: 1.5px solid #e0eaf4;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 12px rgba(0,100,200,0.07);
+    }
+
+    .chart-card {
+      background: #fff; border: 1.5px solid #e0eaf4;
+      border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem;
+    }
+    .chart-title { font-size: 0.88rem; font-weight: 700; margin-bottom: 1rem; }
+
+    .station-list {
+      background: #fff; border: 1.5px solid #e0eaf4;
+      border-radius: 16px; overflow: hidden; margin-bottom: 2rem;
+      max-height: 500px; overflow-y: auto;
+    }
+    .station-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 1.5rem; border-bottom: 1px solid #f0f6ff;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .station-item:last-child { border-bottom: none; }
+    .station-item:hover { background: #f8fbff; }
+    .station-item.active { background: #e8f4ff; border-left: 3px solid #0070cc; }
+    .station-name { font-weight: 700; font-size: 0.9rem; }
+    .station-sub { font-size: 0.75rem; color: #7a9ab8; margin-top: 2px; }
+
+    .no-result {
+      padding: 2rem; text-align: center;
+      color: #7a9ab8; font-size: 0.88rem;
+    }
+
+    .info-section {
+      background: #fff; border: 1.5px solid #e0eaf4;
+      border-radius: 16px; padding: 1.8rem; margin-bottom: 2rem;
+    }
+    .info-section p { font-size: 0.88rem; color: #3a5a7a; line-height: 1.8; margin-bottom: 1rem; }
+    .formula-box {
+      background: #f0f7ff; border-left: 4px solid #0070cc;
+      border-radius: 8px; padding: 1rem 1.2rem;
+      font-size: 0.85rem; color: #1a3a5a; margin: 1rem 0; font-weight: 500;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 1rem; }
+    th { background:#f0f7ff; color:#0070cc; padding:10px 14px; text-align:left; font-weight:700; border-bottom:2px solid #c0d8ee; }
+    td { padding:10px 14px; border-bottom:1px solid #e8f0f8; color:#2a4a6a; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#f8fbff; }
+
+    .grade-table { display:grid; grid-template-columns:repeat(4,1fr); gap:0.8rem; margin-top:1rem; }
+    @media(max-width:600px){.grade-table{grid-template-columns:repeat(2,1fr)}}
+    .grade-item { border-radius:10px; padding:1rem; text-align:center; }
+    .grade-item .score { font-size:1.2rem; font-weight:900; }
+    .grade-item .name { font-size:0.78rem; margin-top:4px; }
+
+    footer {
+      text-align:center; padding:1.5rem;
+      font-size:0.75rem; color:#aac0d4;
+      border-top:1px solid #e0eaf4; background:#fff;
+    }
+    footer a { color:#0070cc; text-decoration:none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-icon">🧬</div>
+    <div>
+      <div class="header-title">수질 오염 지수 (WQI) 대시보드</div>
+      <div class="header-sub">국립환경과학원 물환경 수질측정망 실측 데이터</div>
+    </div>
+  </div>
+  <div class="live-badge"><div class="live-dot"></div>실시간 API 연동</div>
+</header>
+
+<main>
+  <div class="loading-box" id="loading-box">
+    <div class="spinner"></div>
+    <div style="font-weight:700;margin-bottom:8px">전국 수질측정망 데이터 불러오는 중...</div>
+    <div style="font-size:0.75rem;color:#aac0d4">데이터가 많아 20~30초 걸릴 수 있어요</div>
+  </div>
+
+  <div class="error-box" id="error-box" style="display:none"></div>
+
+  <div id="main-content" style="display:none">
+
+    <!-- 검색 -->
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="🔍 측정소명 또는 지역명 검색 (예: 한강, 서울, 팔당)" />
+      <button onclick="doSearch()">검색</button>
+      <div class="search-count" id="search-count"></div>
+    </div>
+
+    <div class="section-title">📊 선택 측정소 WQI 점수</div>
+    <div class="wqi-score-box">
+      <div class="wqi-score" id="wqi-score">-</div>
+      <div class="wqi-label" id="wqi-label">측정소를 선택하세요</div>
+      <div class="wqi-grade grade-normal" id="wqi-grade">-</div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-name">DO · 용존산소</div>
+        <div class="kpi-value" id="kpi-do">-<span class="kpi-unit"> mg/L</span></div>
+        <div class="kpi-desc">높을수록 깨끗 (기준 5↑)</div>
+        <div id="status-do"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-name">BOD · 생화학적 산소요구량</div>
+        <div class="kpi-value" id="kpi-bod">-<span class="kpi-unit"> mg/L</span></div>
+        <div class="kpi-desc">낮을수록 깨끗 (기준 3↓)</div>
+        <div id="status-bod"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-name">COD · 화학적 산소요구량</div>
+        <div class="kpi-value" id="kpi-cod">-<span class="kpi-unit"> mg/L</span></div>
+        <div class="kpi-desc">낮을수록 깨끗 (기준 4↓)</div>
+        <div id="status-cod"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-name">pH · 수소이온농도</div>
+        <div class="kpi-value" id="kpi-ph">-</div>
+        <div class="kpi-desc">6.5~8.5 정상 범위</div>
+        <div id="status-ph"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-name">T-N · 총질소</div>
+        <div class="kpi-value" id="kpi-tn">-<span class="kpi-unit"> mg/L</span></div>
+        <div class="kpi-desc">낮을수록 깨끗 (기준 3↓)</div>
+        <div id="status-tn"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-name">T-P · 총인</div>
+        <div class="kpi-value" id="kpi-tp">-<span class="kpi-unit"> mg/L</span></div>
+        <div class="kpi-desc">낮을수록 깨끗 (기준 0.1↓)</div>
+        <div id="status-tp"></div>
+      </div>
+    </div>
+
+    <div class="section-title">📍 전국 수질 측정소 위치 (마커 클릭 시 상세 보기)</div>
+    <div id="map"></div>
+
+    <div class="section-title">📋 측정소 목록</div>
+    <div class="station-list" id="station-list"></div>
+
+    <div class="section-title">📈 항목별 수질 현황</div>
+    <div class="chart-card">
+      <div class="chart-title" id="chart-title">측정소를 선택하면 차트가 표시됩니다</div>
+      <canvas id="wqiChart" height="80"></canvas>
+    </div>
+
+    <div class="section-title">📖 WQI란 무엇인가?</div>
+    <div class="info-section">
+      <p><b>수질 오염 지수(WQI, Water Quality Index)</b>는 DO·BOD·COD·pH·총질소·총인 6가지 항목을 하나의 점수(0~100)로 압축한 통합 지표입니다.</p>
+      <div class="formula-box">WQI = (DO×0.22) + (BOD×0.19) + (COD×0.16) + (pH×0.18) + (T-N×0.13) + (T-P×0.12)</div>
+      <table>
+        <thead><tr><th>항목</th><th>의미</th><th>가중치</th><th>선정 이유</th></tr></thead>
+        <tbody>
+          <tr><td>DO</td><td>용존산소</td><td>0.22</td><td>수생태계 생존의 직접 지표</td></tr>
+          <tr><td>BOD</td><td>생화학적 산소요구량</td><td>0.19</td><td>생활하수 오염 민감도 높음</td></tr>
+          <tr><td>pH</td><td>수소이온농도</td><td>0.18</td><td>생물 서식 가능성 결정</td></tr>
+          <tr><td>COD</td><td>화학적 산소요구량</td><td>0.16</td><td>산업폐수 오염 반영</td></tr>
+          <tr><td>T-N</td><td>총질소</td><td>0.13</td><td>녹조 발생 원인 물질</td></tr>
+          <tr><td>T-P</td><td>총인</td><td>0.12</td><td>녹조 발생 핵심 영양염류</td></tr>
+        </tbody>
+      </table>
+      <br><p><b>등급 기준</b></p>
+      <div class="grade-table">
+        <div class="grade-item grade-good"><div class="score">80~100</div><div class="name">매우좋음·좋음</div></div>
+        <div class="grade-item grade-normal"><div class="score">60~79</div><div class="name">보통</div></div>
+        <div class="grade-item grade-bad"><div class="score">40~59</div><div class="name">나쁨</div></div>
+        <div class="grade-item grade-danger"><div class="score">0~39</div><div class="name">매우나쁨</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  데이터 출처: <a href="https://www.data.go.kr" target="_blank">환경부 국립환경과학원 물환경 수질측정망 OpenAPI</a> · 학습·교육 목적 제작
+</footer>
+
+<script>
+  let allData = [], filteredData = [], map, wqiChart;
+
+  function toDecimal(dgr, min, sec) {
+    return (parseFloat(dgr)||0) + (parseFloat(min)||0)/60 + (parseFloat(sec)||0)/3600;
+  }
+
+  function calcWQI(d) {
+    const doScore  = Math.min(100, ((parseFloat(d.ITEM_DOC)||0)/14)*100);
+    const bodScore = Math.max(0, 100-((parseFloat(d.ITEM_BOD)||0)/10)*100);
+    const codScore = Math.max(0, 100-((parseFloat(d.ITEM_COD)||0)/20)*100);
+    const phScore  = Math.max(0, 100-Math.abs((parseFloat(d.ITEM_PH)||7)-7)*20);
+    const tnScore  = Math.max(0, 100-((parseFloat(d.ITEM_TN)||0)/10)*100);
+    const tpScore  = Math.max(0, 100-((parseFloat(d.ITEM_TP)||0)/1)*100);
+    return Math.round(doScore*0.22+bodScore*0.19+codScore*0.16+phScore*0.18+tnScore*0.13+tpScore*0.12);
+  }
+
+  function getGrade(w) {
+    if (w>=80) return {label:'매우좋음',cls:'grade-good'};
+    if (w>=60) return {label:'보통',cls:'grade-normal'};
+    if (w>=40) return {label:'나쁨',cls:'grade-bad'};
+    return {label:'매우나쁨',cls:'grade-danger'};
+  }
+
+  const COLORS = {'grade-good':'#00aa6e','grade-normal':'#0070cc','grade-bad':'#e08000','grade-danger':'#e03030'};
+
+  function badge(txt, good) {
+    const c = good?'#00aa6e':'#e03030';
+    return `<span class="kpi-status" style="background:${good?'#e6faf4':'#fff0f0'};color:${c};border:1px solid ${c}">${txt}</span>`;
+  }
+
+  // 검색
+  function doSearch() {
+    const keyword = document.getElementById('search-input').value.trim();
+    if (!keyword) {
+      filteredData = allData;
+    } else {
+      filteredData = allData.filter(d =>
+        (d.PT_NM||'').includes(keyword) ||
+        (d.ADDR||'').includes(keyword) ||
+        (d.ORG_NM||'').includes(keyword)
+      );
+    }
+    document.getElementById('search-count').textContent =
+      keyword ? `${filteredData.length}개 결과` : `전체 ${allData.length}개`;
+    renderList(filteredData);
+    if (filteredData.length > 0) selectStation(0);
+  }
+
+  // 엔터 검색
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('search-input')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doSearch();
+    });
+  });
+
+  function selectStation(idx) {
+    const d = filteredData[idx];
+    if (!d) return;
+
+    document.querySelectorAll('.station-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
+
+    const wqi = calcWQI(d);
+    const gr  = getGrade(wqi);
+    document.getElementById('wqi-score').textContent = wqi;
+    document.getElementById('wqi-label').textContent = `${d.PT_NM} (${d.WMCYMD||''} 측정)`;
+    const ge = document.getElementById('wqi-grade');
+    ge.textContent = gr.label; ge.className = 'wqi-grade '+gr.cls;
+
+    const v = {
+      do:parseFloat(d.ITEM_DOC), bod:parseFloat(d.ITEM_BOD),
+      cod:parseFloat(d.ITEM_COD), ph:parseFloat(d.ITEM_PH),
+      tn:parseFloat(d.ITEM_TN), tp:parseFloat(d.ITEM_TP)
+    };
+
+    const fmt = (val,unit) => (isNaN(val)?'-':val)+(unit?`<span class="kpi-unit"> ${unit}</span>`:'');
+    document.getElementById('kpi-do').innerHTML  = fmt(v.do,'mg/L');
+    document.getElementById('kpi-bod').innerHTML = fmt(v.bod,'mg/L');
+    document.getElementById('kpi-cod').innerHTML = fmt(v.cod,'mg/L');
+    document.getElementById('kpi-ph').innerHTML  = fmt(v.ph,'');
+    document.getElementById('kpi-tn').innerHTML  = fmt(v.tn,'mg/L');
+    document.getElementById('kpi-tp').innerHTML  = fmt(v.tp,'mg/L');
+
+    document.getElementById('status-do').innerHTML  = !isNaN(v.do)  ? badge(v.do>=5?'정상':'주의',v.do>=5) : '';
+    document.getElementById('status-bod').innerHTML = !isNaN(v.bod) ? badge(v.bod<=3?'정상':'주의',v.bod<=3) : '';
+    document.getElementById('status-cod').innerHTML = !isNaN(v.cod) ? badge(v.cod<=4?'정상':'주의',v.cod<=4) : '';
+    document.getElementById('status-ph').innerHTML  = !isNaN(v.ph)  ? badge(v.ph>=6.5&&v.ph<=8.5?'정상':'주의',v.ph>=6.5&&v.ph<=8.5) : '';
+    document.getElementById('status-tn').innerHTML  = !isNaN(v.tn)  ? badge(v.tn<=3?'정상':'주의',v.tn<=3) : '';
+    document.getElementById('status-tp').innerHTML  = !isNaN(v.tp)  ? badge(v.tp<=0.1?'정상':'주의',v.tp<=0.1) : '';
+
+    updateChart(d);
+
+    const lat = toDecimal(d.LAT_DGR,d.LAT_MIN,d.LAT_SEC);
+    const lng = toDecimal(d.LON_DGR,d.LON_MIN,d.LON_SEC);
+    if (lat>33&&lat<39&&lng>124&&lng<132) map.flyTo([lat,lng],12,{duration:1});
+  }
+
+  function updateChart(d) {
+    document.getElementById('chart-title').textContent = `${d.PT_NM} 항목별 수질 측정값`;
+    const labels = ['DO','BOD','COD','pH','T-N','T-P'];
+    const values = [d.ITEM_DOC,d.ITEM_BOD,d.ITEM_COD,d.ITEM_PH,d.ITEM_TN,d.ITEM_TP].map(v=>parseFloat(v)||0);
+    const colors = ['#0070cc','#e08000','#e03030','#00aa6e','#9b59b6','#16a085'];
+    if (wqiChart) wqiChart.destroy();
+    wqiChart = new Chart(document.getElementById('wqiChart').getContext('2d'),{
+      type:'bar',
+      data:{labels,datasets:[{data:values,backgroundColor:colors.map(c=>c+'99'),borderColor:colors,borderWidth:2,borderRadius:6}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#f0f6ff'},ticks:{color:'#7a9ab8'}},y:{grid:{color:'#f0f6ff'},ticks:{color:'#7a9ab8'}}}}
+    });
+  }
+
+  function initMap(data) {
+    map = L.map('map').setView([36.5,127.8],7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+
+    data.forEach((d,idx)=>{
+      const lat = toDecimal(d.LAT_DGR,d.LAT_MIN,d.LAT_SEC);
+      const lng = toDecimal(d.LON_DGR,d.LON_MIN,d.LON_SEC);
+      if (isNaN(lat)||isNaN(lng)||lat<33||lat>39||lng<124||lng>132) return;
+
+      const wqi = calcWQI(d);
+      const gr  = getGrade(wqi);
+      const col = COLORS[gr.cls];
+
+      L.marker([lat,lng],{icon:L.divIcon({
+        className:'',
+        html:`<div style="background:${col};color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.25)">${wqi}</div>`,
+        iconSize:[40,40],iconAnchor:[20,20]
+      })}).addTo(map)
+        .bindPopup(`
+          <div style="font-family:'Noto Sans KR',sans-serif;min-width:180px">
+            <b style="font-size:1rem">${d.PT_NM}</b><br>
+            <span style="color:#7a9ab8;font-size:0.78rem">${d.ADDR||''}</span><br><br>
+            <b style="color:${col};font-size:1.4rem">${wqi}점</b> <span style="color:#7a9ab8">(${gr.label})</span><br><br>
+            DO: <b>${d.ITEM_DOC||'-'}</b> mg/L &nbsp; BOD: <b>${d.ITEM_BOD||'-'}</b> mg/L<br>
+            COD: <b>${d.ITEM_COD||'-'}</b> mg/L &nbsp; pH: <b>${d.ITEM_PH||'-'}</b><br>
+            T-N: <b>${d.ITEM_TN||'-'}</b> mg/L &nbsp; T-P: <b>${d.ITEM_TP||'-'}</b> mg/L<br><br>
+            <span style="color:#aac0d4;font-size:0.72rem">📅 ${d.WMCYMD||''} 측정</span>
+          </div>
+        `)
+        .on('click',()=>{
+          const realIdx = filteredData.indexOf(d);
+          if (realIdx >= 0) selectStation(realIdx);
+        });
+    });
+  }
+
+  function renderList(data) {
+    if (data.length === 0) {
+      document.getElementById('station-list').innerHTML = '<div class="no-result">🔍 검색 결과가 없어요</div>';
+      return;
+    }
+    document.getElementById('station-list').innerHTML = data.map((d,idx)=>{
+      const wqi = calcWQI(d);
+      const gr  = getGrade(wqi);
+      const col = COLORS[gr.cls];
+      return `<div class="station-item" onclick="selectStation(${idx})">
+        <div>
+          <div class="station-name">${d.PT_NM}</div>
+          <div class="station-sub">${d.ADDR||''} · ${d.ORG_NM||''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:0.72rem;color:#aac0d4">${d.WMCYMD||''}</div>
+          <div style="background:${col};color:#fff;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px">${wqi}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function fetchData() {
+    try {
+      const years = ['2025','2024','2023'];
+      let items = null;
+
+      for (const yr of years) {
+        try {
+          const res  = await fetch(`/api/water?year=${yr}`);
+          const json = await res.json();
+          const raw  = json?.getWaterMeasuringList?.item;
+          if (raw && (Array.isArray(raw) ? raw.length > 0 : true)) {
+            items = Array.isArray(raw) ? raw : [raw];
+            console.log(`${yr}년 데이터 ${items.length}건 로드 성공`);
+            break;
+          }
+        } catch(e) {
+          console.warn(`${yr}년 실패`, e);
+        }
+      }
+
+      if (!items) throw new Error('데이터를 불러올 수 없습니다');
+
+      allData = items;
+      filteredData = items;
+      document.getElementById('search-count').textContent = `전체 ${allData.length}개`;
+
+      document.getElementById('loading-box').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+
+      setTimeout(()=>{
+        initMap(allData);
+        renderList(filteredData);
+        selectStation(0);
+      }, 100);
+
+    } catch(err) {
+      document.getElementById('loading-box').style.display = 'none';
+      document.getElementById('error-box').style.display = 'block';
+      document.getElementById('error-box').innerHTML = `⚠️ 오류: ${err.message}<br><small>cmd에서 node server.js 실행 후 http://localhost:3000 으로 접속해야 해요!</small>`;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', fetchData);
+</script>
+</body>
+</html>

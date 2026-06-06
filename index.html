@@ -1,5 +1,5 @@
 
-   <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -15,20 +15,22 @@
 
     header {
       background: #fff; border-bottom: 2px solid #e0eaf4;
-      padding: 0 2rem; height: 64px;
+      padding: 0.8rem 1rem; min-height: 64px;
       display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 999;
       box-shadow: 0 2px 12px rgba(0,100,200,0.07);
+      flex-wrap: wrap; gap: 0.5rem;
     }
     .header-left { display: flex; align-items: center; gap: 12px; }
     .header-icon { font-size: 2rem; }
-    .header-title { font-size: 1.1rem; font-weight: 900; color: #0070cc; }
-    .header-sub { font-size: 0.72rem; color: #7a9ab8; }
+    .header-title { font-size: 0.95rem; font-weight: 900; color: #0070cc; }
+    .header-sub { font-size: 0.65rem; color: #7a9ab8; }
     .live-badge {
       display: flex; align-items: center; gap: 6px;
-      font-size: 0.75rem; color: #00aa6e;
-      background: #e6faf4; padding: 4px 12px;
+      font-size: 0.7rem; color: #00aa6e;
+      background: #e6faf4; padding: 4px 10px;
       border-radius: 20px; border: 1px solid #00aa6e;
+      white-space: nowrap;
     }
     .live-dot { width: 7px; height: 7px; background: #00aa6e; border-radius: 50%; animation: blink 1.5s infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
@@ -61,6 +63,23 @@
       margin-bottom: 1.5rem; line-height: 1.8;
     }
 
+    /* 연도 탭 */
+    .year-tabs {
+      display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .year-btn {
+      padding: 8px 20px; border-radius: 20px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 700; cursor: pointer; font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .year-btn.active {
+      background: #0070cc; color: #fff; border: 1.5px solid #0070cc;
+    }
+    .year-btn.inactive {
+      background: #fff; color: #7a9ab8; border: 1.5px solid #e0eaf4;
+    }
+
     /* 검색창 */
     .search-box {
       background: #fff; border: 1.5px solid #e0eaf4;
@@ -82,9 +101,7 @@
       border: none; border-radius: 10px;
       padding: 10px 20px; font-family: 'Noto Sans KR', sans-serif;
       font-size: 0.9rem; font-weight: 700; cursor: pointer;
-      transition: background 0.2s;
     }
-    .search-box button:hover { background: #005bb5; }
     .search-count { font-size: 0.78rem; color: #7a9ab8; white-space: nowrap; }
 
     .wqi-score-box {
@@ -131,8 +148,8 @@
       width: 100%; height: 420px;
       border-radius: 16px; border: 1.5px solid #e0eaf4;
       margin-bottom: 2rem;
-      box-shadow: 0 2px 12px rgba(0,100,200,0.07);
     }
+    @media(max-width:600px){#map{height:260px}}
 
     .chart-card {
       background: #fff; border: 1.5px solid #e0eaf4;
@@ -155,11 +172,7 @@
     .station-item.active { background: #e8f4ff; border-left: 3px solid #0070cc; }
     .station-name { font-weight: 700; font-size: 0.9rem; }
     .station-sub { font-size: 0.75rem; color: #7a9ab8; margin-top: 2px; }
-
-    .no-result {
-      padding: 2rem; text-align: center;
-      color: #7a9ab8; font-size: 0.88rem;
-    }
+    .no-result { padding: 2rem; text-align: center; color: #7a9ab8; font-size: 0.88rem; }
 
     .info-section {
       background: #fff; border: 1.5px solid #e0eaf4;
@@ -215,9 +228,16 @@
 
   <div id="main-content" style="display:none">
 
+    <!-- 연도 탭 -->
+    <div class="year-tabs">
+      <button class="year-btn active" id="btn-2023" onclick="changeYear('2023')">2023년</button>
+      <button class="year-btn inactive" id="btn-2024" onclick="changeYear('2024')">2024년</button>
+      <button class="year-btn inactive" id="btn-2025" onclick="changeYear('2025')">2025년</button>
+    </div>
+
     <!-- 검색 -->
     <div class="search-box">
-      <input type="text" id="search-input" placeholder="🔍 측정소명 또는 지역명 검색 (예: 한강, 서울, 팔당)" />
+      <input type="text" id="search-input" placeholder="🔍 측정소명 또는 지역명 검색 (예: 한강, 서울, 용인)" />
       <button onclick="doSearch()">검색</button>
       <div class="search-count" id="search-count"></div>
     </div>
@@ -312,6 +332,7 @@
 
 <script>
   let allData = [], filteredData = [], map, wqiChart;
+  let currentYear = '2023';
 
   function toDecimal(dgr, min, sec) {
     return (parseFloat(dgr)||0) + (parseFloat(min)||0)/60 + (parseFloat(sec)||0)/3600;
@@ -341,6 +362,36 @@
     return `<span class="kpi-status" style="background:${good?'#e6faf4':'#fff0f0'};color:${c};border:1px solid ${c}">${txt}</span>`;
   }
 
+  // 연도 변경
+  async function changeYear(year) {
+    if (year === currentYear) return;
+    currentYear = year;
+
+    ['2023','2024','2025'].forEach(y => {
+      const btn = document.getElementById(`btn-${y}`);
+      btn.className = y === year ? 'year-btn active' : 'year-btn inactive';
+    });
+
+    document.getElementById('search-count').textContent = '로딩 중...';
+    document.getElementById('search-input').value = '';
+
+    try {
+      const res  = await fetch(`/api/water?year=${year}`);
+      const json = await res.json();
+      const raw  = json?.getWaterMeasuringList?.item;
+      if (raw) {
+        allData = Array.isArray(raw) ? raw : [raw];
+        filteredData = allData;
+        document.getElementById('search-count').textContent = `전체 ${allData.length}개`;
+        updateMap(allData);
+        renderList(filteredData);
+        if (filteredData.length > 0) selectStation(0);
+      }
+    } catch(e) {
+      document.getElementById('search-count').textContent = '오류 발생';
+    }
+  }
+
   // 검색
   function doSearch() {
     const keyword = document.getElementById('search-input').value.trim();
@@ -358,13 +409,6 @@
     renderList(filteredData);
     if (filteredData.length > 0) selectStation(0);
   }
-
-  // 엔터 검색
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('search-input')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') doSearch();
-    });
-  });
 
   function selectStation(idx) {
     const d = filteredData[idx];
@@ -420,11 +464,13 @@
     });
   }
 
-  function initMap(data) {
-    map = L.map('map').setView([36.5,127.8],7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+  function updateMap(data) {
+    // 기존 마커 제거
+    map.eachLayer(layer => {
+      if (layer instanceof L.Marker) map.removeLayer(layer);
+    });
 
-    data.forEach((d,idx)=>{
+    data.forEach((d,idx) => {
       const lat = toDecimal(d.LAT_DGR,d.LAT_MIN,d.LAT_SEC);
       const lng = toDecimal(d.LON_DGR,d.LON_MIN,d.LON_SEC);
       if (isNaN(lat)||isNaN(lng)||lat<33||lat>39||lng<124||lng>132) return;
@@ -456,6 +502,12 @@
     });
   }
 
+  function initMap(data) {
+    map = L.map('map').setView([36.5,127.8],7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+    updateMap(data);
+  }
+
   function renderList(data) {
     if (data.length === 0) {
       document.getElementById('station-list').innerHTML = '<div class="no-result">🔍 검색 결과가 없어요</div>';
@@ -480,28 +532,13 @@
 
   async function fetchData() {
     try {
-      const years = ['2025','2024','2023'];
-      let items = null;
+      const res  = await fetch(`/api/water?year=2023`);
+      const json = await res.json();
+      const raw  = json?.getWaterMeasuringList?.item;
+      if (!raw) throw new Error('데이터를 불러올 수 없습니다');
 
-      for (const yr of years) {
-        try {
-          const res  = await fetch(`/api/water?year=${yr}`);
-          const json = await res.json();
-          const raw  = json?.getWaterMeasuringList?.item;
-          if (raw && (Array.isArray(raw) ? raw.length > 0 : true)) {
-            items = Array.isArray(raw) ? raw : [raw];
-            console.log(`${yr}년 데이터 ${items.length}건 로드 성공`);
-            break;
-          }
-        } catch(e) {
-          console.warn(`${yr}년 실패`, e);
-        }
-      }
-
-      if (!items) throw new Error('데이터를 불러올 수 없습니다');
-
-      allData = items;
-      filteredData = items;
+      allData = Array.isArray(raw) ? raw : [raw];
+      filteredData = allData;
       document.getElementById('search-count').textContent = `전체 ${allData.length}개`;
 
       document.getElementById('loading-box').style.display = 'none';
@@ -516,11 +553,16 @@
     } catch(err) {
       document.getElementById('loading-box').style.display = 'none';
       document.getElementById('error-box').style.display = 'block';
-      document.getElementById('error-box').innerHTML = `⚠️ 오류: ${err.message}<br><small>cmd에서 node server.js 실행 후 http://localhost:3000 으로 접속해야 해요!</small>`;
+      document.getElementById('error-box').innerHTML = `⚠️ 오류: ${err.message}`;
     }
   }
 
-  document.addEventListener('DOMContentLoaded', fetchData);
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchData();
+    document.getElementById('search-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doSearch();
+    });
+  });
 </script>
 </body>
 </html>

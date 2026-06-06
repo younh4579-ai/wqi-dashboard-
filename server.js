@@ -1,6 +1,8 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(cors());
@@ -8,14 +10,12 @@ app.use(express.static(__dirname));
 
 const API_KEY = '9f6dee73221d1e4438de747823e4721b7a8631f04917ca86c4d597ba8fed7aec';
 const BASE = 'http://apis.data.go.kr/1480523/WaterQualityService/getWaterMeasuringList';
+const DATA_FILE = path.join(__dirname, 'data.json');
 
-// 연도별 캐시
 const cache = {};
 
-async function loadYear(year) {
-  if (cache[year]) return cache[year];
-
-  console.log(`${year}년 데이터 로딩 시작...`);
+async function fetchYear(year) {
+  console.log(`${year}년 API 로딩 중...`);
   const results = [];
 
   const firstUrl = `${BASE}?numOfRows=100&pageNo=1&serviceKey=${API_KEY}&resultType=json&wmyrList=${year}`;
@@ -49,9 +49,27 @@ async function loadYear(year) {
   const pages = await Promise.all(pagePromises);
   pages.forEach(page => results.push(...page));
 
-  cache[year] = results;
-  console.log(`✅ ${year}년 ${results.length}건 캐시 완료`);
+  console.log(`✅ ${year}년 ${results.length}건 로드 완료`);
   return results;
+}
+
+async function loadYear(year) {
+  if (cache[year]) return cache[year];
+
+  // 저장된 파일 있으면 바로 읽기
+  const filePath = path.join(__dirname, `data_${year}.json`);
+  if (fs.existsSync(filePath)) {
+    console.log(`${year}년 파일에서 로드...`);
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    cache[year] = data;
+    return data;
+  }
+
+  // 없으면 API에서 받아서 파일로 저장
+  const data = await fetchYear(year);
+  fs.writeFileSync(filePath, JSON.stringify(data), 'utf8');
+  cache[year] = data;
+  return data;
 }
 
 app.get('/api/water', async (req, res) => {
@@ -64,7 +82,6 @@ app.get('/api/water', async (req, res) => {
   }
 });
 
-// 서버 시작시 2023년 먼저 미리 로드
 app.listen(3000, () => {
   console.log('서버 실행 중: http://localhost:3000');
   loadYear('2023');

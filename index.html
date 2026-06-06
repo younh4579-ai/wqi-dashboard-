@@ -1,5 +1,4 @@
-
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -7,14 +6,15 @@
   <title>수질 오염 지수 (WQI) 대시보드</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #f4f8fc; color: #1a2a3a; font-family: 'Noto Sans KR', sans-serif; }
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css"/>
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
     header {
       background: #fff; border-bottom: 2px solid #e0eaf4;
       padding: 0.8rem 1rem; min-height: 64px;
@@ -65,24 +65,16 @@
       margin-bottom: 1.5rem; line-height: 1.8;
     }
 
-    /* 연도 탭 */
-    .year-tabs {
-      display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;
-    }
+    .year-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
     .year-btn {
       padding: 8px 20px; border-radius: 20px;
       font-family: 'Noto Sans KR', sans-serif;
       font-weight: 700; cursor: pointer; font-size: 0.85rem;
       transition: all 0.2s;
     }
-    .year-btn.active {
-      background: #0070cc; color: #fff; border: 1.5px solid #0070cc;
-    }
-    .year-btn.inactive {
-      background: #fff; color: #7a9ab8; border: 1.5px solid #e0eaf4;
-    }
+    .year-btn.active { background: #0070cc; color: #fff; border: 1.5px solid #0070cc; }
+    .year-btn.inactive { background: #fff; color: #7a9ab8; border: 1.5px solid #e0eaf4; }
 
-    /* 검색창 */
     .search-box {
       background: #fff; border: 1.5px solid #e0eaf4;
       border-radius: 14px; padding: 1rem 1.5rem;
@@ -94,8 +86,7 @@
       flex: 1; border: 1.5px solid #e0eaf4;
       border-radius: 10px; padding: 10px 16px;
       font-family: 'Noto Sans KR', sans-serif;
-      font-size: 0.9rem; outline: none;
-      transition: border 0.2s;
+      font-size: 0.9rem; outline: none; transition: border 0.2s;
     }
     .search-box input:focus { border-color: #0070cc; }
     .search-box button {
@@ -223,21 +214,19 @@
   <div class="loading-box" id="loading-box">
     <div class="spinner"></div>
     <div style="font-weight:700;margin-bottom:8px">전국 수질측정망 데이터 불러오는 중...</div>
-    <div style="font-size:0.75rem;color:#aac0d4">데이터가 많아 20~30초 걸릴 수 있어요</div>
+    <div style="font-size:0.75rem;color:#aac0d4">잠시만 기다려주세요</div>
   </div>
 
   <div class="error-box" id="error-box" style="display:none"></div>
 
   <div id="main-content" style="display:none">
 
-    <!-- 연도 탭 -->
     <div class="year-tabs">
       <button class="year-btn active" id="btn-2023" onclick="changeYear('2023')">2023년</button>
       <button class="year-btn inactive" id="btn-2024" onclick="changeYear('2024')">2024년</button>
       <button class="year-btn inactive" id="btn-2025" onclick="changeYear('2025')">2025년</button>
     </div>
 
-    <!-- 검색 -->
     <div class="search-box">
       <input type="text" id="search-input" placeholder="🔍 측정소명 또는 지역명 검색 (예: 한강, 서울, 용인)" />
       <button onclick="doSearch()">검색</button>
@@ -333,7 +322,7 @@
 </footer>
 
 <script>
-  let allData = [], filteredData = [], map, wqiChart;
+  let allData = [], filteredData = [], map, wqiChart, clusterGroup;
   let currentYear = '2023';
 
   function toDecimal(dgr, min, sec) {
@@ -364,19 +353,14 @@
     return `<span class="kpi-status" style="background:${good?'#e6faf4':'#fff0f0'};color:${c};border:1px solid ${c}">${txt}</span>`;
   }
 
-  // 연도 변경
   async function changeYear(year) {
     if (year === currentYear) return;
     currentYear = year;
-
     ['2023','2024','2025'].forEach(y => {
-      const btn = document.getElementById(`btn-${y}`);
-      btn.className = y === year ? 'year-btn active' : 'year-btn inactive';
+      document.getElementById(`btn-${y}`).className = y===year ? 'year-btn active' : 'year-btn inactive';
     });
-
     document.getElementById('search-count').textContent = '로딩 중...';
     document.getElementById('search-input').value = '';
-
     try {
       const res  = await fetch(`/api/water?year=${year}`);
       const json = await res.json();
@@ -394,18 +378,14 @@
     }
   }
 
-  // 검색
   function doSearch() {
     const keyword = document.getElementById('search-input').value.trim();
-    if (!keyword) {
-      filteredData = allData;
-    } else {
-      filteredData = allData.filter(d =>
-        (d.PT_NM||'').includes(keyword) ||
-        (d.ADDR||'').includes(keyword) ||
-        (d.ORG_NM||'').includes(keyword)
-      );
-    }
+    filteredData = keyword
+      ? allData.filter(d =>
+          (d.PT_NM||'').includes(keyword) ||
+          (d.ADDR||'').includes(keyword) ||
+          (d.ORG_NM||'').includes(keyword))
+      : allData;
     document.getElementById('search-count').textContent =
       keyword ? `${filteredData.length}개 결과` : `전체 ${allData.length}개`;
     renderList(filteredData);
@@ -415,7 +395,6 @@
   function selectStation(idx) {
     const d = filteredData[idx];
     if (!d) return;
-
     document.querySelectorAll('.station-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
 
     const wqi = calcWQI(d);
@@ -430,7 +409,6 @@
       cod:parseFloat(d.ITEM_COD), ph:parseFloat(d.ITEM_PH),
       tn:parseFloat(d.ITEM_TN), tp:parseFloat(d.ITEM_TP)
     };
-
     const fmt = (val,unit) => (isNaN(val)?'-':val)+(unit?`<span class="kpi-unit"> ${unit}</span>`:'');
     document.getElementById('kpi-do').innerHTML  = fmt(v.do,'mg/L');
     document.getElementById('kpi-bod').innerHTML = fmt(v.bod,'mg/L');
@@ -447,10 +425,9 @@
     document.getElementById('status-tp').innerHTML  = !isNaN(v.tp)  ? badge(v.tp<=0.1?'정상':'주의',v.tp<=0.1) : '';
 
     updateChart(d);
-
     const lat = toDecimal(d.LAT_DGR,d.LAT_MIN,d.LAT_SEC);
     const lng = toDecimal(d.LON_DGR,d.LON_MIN,d.LON_SEC);
-    if (lat>33&&lat<39&&lng>124&&lng<132) map.flyTo([lat,lng],12,{duration:1});
+    if (lat>34.5&&lat<38.5&&lng>126&&lng<130) map.flyTo([lat,lng],12,{duration:1});
   }
 
   function updateChart(d) {
@@ -466,59 +443,53 @@
     });
   }
 
- function updateMap(data) {
-  map.eachLayer(layer => {
-    if (layer instanceof L.Marker || layer instanceof L.MarkerClusterGroup) map.removeLayer(layer);
-  });
-
-  const markers = L.markerClusterGroup({
-    maxClusterRadius: 50,
-    iconCreateFunction: cluster => {
-      const count = cluster.getChildCount();
-      return L.divIcon({
-        html: `<div style="background:#0070cc;color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.2)">${count}</div>`,
-        iconSize:[40,40], iconAnchor:[20,20]
-      });
-    }
-  });
-
-  data.forEach((d,idx) => {
-    const lat = toDecimal(d.LAT_DGR,d.LAT_MIN,d.LAT_SEC);
-    const lng = toDecimal(d.LON_DGR,d.LON_MIN,d.LON_SEC);
-    if (isNaN(lat)||isNaN(lng)||lat<34.5||lat>38.5||lng<126||lng>130) return;
-
-    const wqi = calcWQI(d);
-    const gr  = getGrade(wqi);
-    const col = COLORS[gr.cls];
-
-    const marker = L.marker([lat,lng],{icon:L.divIcon({
-      className:'',
-      html:`<div style="background:${col};color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.25)">${wqi}</div>`,
-      iconSize:[40,40],iconAnchor:[20,20]
-    })});
-
-    marker.bindPopup(`
-      <div style="font-family:'Noto Sans KR',sans-serif;min-width:180px">
-        <b style="font-size:1rem">${d.PT_NM}</b><br>
-        <span style="color:#7a9ab8;font-size:0.78rem">${d.ADDR||''}</span><br><br>
-        <b style="color:${col};font-size:1.4rem">${wqi}점</b> <span style="color:#7a9ab8">(${gr.label})</span><br><br>
-        DO: <b>${d.ITEM_DOC||'-'}</b> mg/L &nbsp; BOD: <b>${d.ITEM_BOD||'-'}</b> mg/L<br>
-        COD: <b>${d.ITEM_COD||'-'}</b> mg/L &nbsp; pH: <b>${d.ITEM_PH||'-'}</b><br>
-        T-N: <b>${d.ITEM_TN||'-'}</b> mg/L &nbsp; T-P: <b>${d.ITEM_TP||'-'}</b> mg/L<br><br>
-        <span style="color:#aac0d4;font-size:0.72rem">📅 ${d.WMCYMD||''} 측정</span>
-      </div>
-    `);
-
-    marker.on('click',()=>{
-      const realIdx = filteredData.indexOf(d);
-      if (realIdx >= 0) selectStation(realIdx);
+  function updateMap(data) {
+    if (clusterGroup) map.removeLayer(clusterGroup);
+    clusterGroup = L.markerClusterGroup({
+      maxClusterRadius: 50,
+      iconCreateFunction: cluster => {
+        const count = cluster.getChildCount();
+        return L.divIcon({
+          html:`<div style="background:#0070cc;color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.2)">${count}</div>`,
+          iconSize:[40,40],iconAnchor:[20,20]
+        });
+      }
     });
 
-    markers.addLayer(marker);
-  });
+    data.forEach((d,idx)=>{
+      const lat = toDecimal(d.LAT_DGR,d.LAT_MIN,d.LAT_SEC);
+      const lng = toDecimal(d.LON_DGR,d.LON_MIN,d.LON_SEC);
+      if (isNaN(lat)||isNaN(lng)||lat<34.5||lat>38.5||lng<126||lng>130) return;
 
-  map.addLayer(markers);
-}
+      const wqi = calcWQI(d);
+      const gr  = getGrade(wqi);
+      const col = COLORS[gr.cls];
+
+      const marker = L.marker([lat,lng],{icon:L.divIcon({
+        className:'',
+        html:`<div style="background:${col};color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.25)">${wqi}</div>`,
+        iconSize:[40,40],iconAnchor:[20,20]
+      })});
+
+      marker.bindPopup(`
+        <div style="font-family:'Noto Sans KR',sans-serif;min-width:180px">
+          <b style="font-size:1rem">${d.PT_NM}</b><br>
+          <span style="color:#7a9ab8;font-size:0.78rem">${d.ADDR||''}</span><br><br>
+          <b style="color:${col};font-size:1.4rem">${wqi}점</b> <span style="color:#7a9ab8">(${gr.label})</span><br><br>
+          DO: <b>${d.ITEM_DOC||'-'}</b> mg/L &nbsp; BOD: <b>${d.ITEM_BOD||'-'}</b> mg/L<br>
+          COD: <b>${d.ITEM_COD||'-'}</b> mg/L &nbsp; pH: <b>${d.ITEM_PH||'-'}</b><br>
+          T-N: <b>${d.ITEM_TN||'-'}</b> mg/L &nbsp; T-P: <b>${d.ITEM_TP||'-'}</b> mg/L<br><br>
+          <span style="color:#aac0d4;font-size:0.72rem">📅 ${d.WMCYMD||''} 측정</span>
+        </div>
+      `);
+      marker.on('click',()=>{
+        const realIdx = filteredData.indexOf(d);
+        if (realIdx>=0) selectStation(realIdx);
+      });
+      clusterGroup.addLayer(marker);
+    });
+    map.addLayer(clusterGroup);
+  }
 
   function initMap(data) {
     map = L.map('map').setView([36.5,127.8],7);
@@ -527,14 +498,12 @@
   }
 
   function renderList(data) {
-    if (data.length === 0) {
-      document.getElementById('station-list').innerHTML = '<div class="no-result">🔍 검색 결과가 없어요</div>';
+    if (data.length===0) {
+      document.getElementById('station-list').innerHTML='<div class="no-result">🔍 검색 결과가 없어요</div>';
       return;
     }
     document.getElementById('station-list').innerHTML = data.map((d,idx)=>{
-      const wqi = calcWQI(d);
-      const gr  = getGrade(wqi);
-      const col = COLORS[gr.cls];
+      const wqi=calcWQI(d), gr=getGrade(wqi), col=COLORS[gr.cls];
       return `<div class="station-item" onclick="selectStation(${idx})">
         <div>
           <div class="station-name">${d.PT_NM}</div>
@@ -550,24 +519,16 @@
 
   async function fetchData() {
     try {
-      const res  = await fetch(`/api/water?year=2023`);
+      const res  = await fetch('/api/water?year=2023');
       const json = await res.json();
       const raw  = json?.getWaterMeasuringList?.item;
       if (!raw) throw new Error('데이터를 불러올 수 없습니다');
-
       allData = Array.isArray(raw) ? raw : [raw];
       filteredData = allData;
       document.getElementById('search-count').textContent = `전체 ${allData.length}개`;
-
       document.getElementById('loading-box').style.display = 'none';
       document.getElementById('main-content').style.display = 'block';
-
-      setTimeout(()=>{
-        initMap(allData);
-        renderList(filteredData);
-        selectStation(0);
-      }, 100);
-
+      setTimeout(()=>{ initMap(allData); renderList(filteredData); selectStation(0); }, 100);
     } catch(err) {
       document.getElementById('loading-box').style.display = 'none';
       document.getElementById('error-box').style.display = 'block';
@@ -575,11 +536,9 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', ()=>{
     fetchData();
-    document.getElementById('search-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter') doSearch();
-    });
+    document.getElementById('search-input').addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
   });
 </script>
 </body>

@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.static(__dirname));
 
-const API_KEY = '여기에_본인_API_KEY';
+const API_KEY = '여기에_API_KEY';
 const BASE = 'http://apis.data.go.kr/1480523/WaterQualityService/getWaterMeasuringList';
 
 let cachedData = [];
@@ -16,6 +16,8 @@ async function loadData() {
 
   const years = ['2025', '2024', '2023'];
   const results = [];
+
+  let usedYear = null;
 
   for (const year of years) {
     try {
@@ -31,10 +33,15 @@ async function loadData() {
 
       const firstItems = firstData?.getWaterMeasuringList?.item;
 
+      // 👉 데이터 없으면 다음 연도로 넘어감
       if (!firstItems || totalCount === 0) {
         console.log(`${year}년 데이터 없음`);
         continue;
       }
+
+      console.log(`✅ ${year}년 데이터 사용 (최신 선택됨)`);
+
+      usedYear = year;
 
       const arr = Array.isArray(firstItems)
         ? firstItems
@@ -47,10 +54,6 @@ async function loadData() {
         50
       );
 
-      console.log(
-        `${year}년 ${totalCount}건 / ${totalPages}페이지 로드`
-      );
-
       for (let page = 2; page <= totalPages; page++) {
         try {
           const url =
@@ -59,54 +62,40 @@ async function loadData() {
           const res = await fetch(url);
           const data = await res.json();
 
-          const items =
-            data?.getWaterMeasuringList?.item;
+          const items = data?.getWaterMeasuringList?.item;
 
           if (items) {
             results.push(
-              ...(Array.isArray(items)
-                ? items
-                : [items])
+              ...(Array.isArray(items) ? items : [items])
             );
           }
-        } catch (err) {
-          console.warn(`${year}년 ${page}페이지 실패`);
-        }
+        } catch (e) {}
       }
 
-      console.log(`✅ ${year}년 완료`);
-    } catch (err) {
-      console.warn(`${year}년 실패`, err.message);
+      // 👉 여기 핵심
+      // 최신 "유효한 연도" 찾으면 즉시 종료
+      break;
+
+    } catch (e) {
+      console.warn(`${year}년 실패`);
     }
   }
 
   cachedData = results;
 
-  console.log(
-    `총 ${cachedData.length}건 캐시 완료`
-  );
+  console.log(`총 ${cachedData.length}건 로드 완료 (${usedYear} 사용)`);
 }
 
 app.get('/api/water', (req, res) => {
   if (!cachedData.length) {
     return res.status(503).json({
-      error: '데이터 로딩 중입니다.'
+      error: '데이터 로딩 중입니다'
     });
-  }
-
-  const year = req.query.year;
-
-  let result = cachedData;
-
-  if (year) {
-    result = cachedData.filter(
-      item => String(item.WMYR) === String(year)
-    );
   }
 
   res.json({
     getWaterMeasuringList: {
-      item: result
+      item: cachedData
     }
   });
 });

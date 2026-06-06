@@ -1,3 +1,4 @@
+
 const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
@@ -10,36 +11,57 @@ const API_KEY = '여기에_API_KEY';
 const BASE = 'http://apis.data.go.kr/1480523/WaterQualityService/getWaterMeasuringList';
 
 let cachedData = [];
+let isLoading = false;
 
+/**
+ * 안전하게 JSON 파싱 (서버 안 죽게 하는 핵심)
+ */
+async function safeJson(res) {
+  try {
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * 데이터 로딩 (안 죽는 구조)
+ */
 async function loadData() {
-  console.log('전국 수질 데이터 로딩 시작...');
+  if (isLoading) return;
+  isLoading = true;
+
+  console.log('📡 수질 데이터 로딩 시작...');
 
   const years = ['2025', '2024', '2023'];
   const results = [];
-
   let usedYear = null;
 
   for (const year of years) {
     try {
-      const firstUrl =
+      const url =
         `${BASE}?numOfRows=100&pageNo=1&serviceKey=${API_KEY}&resultType=json&wmyrList=${year}`;
 
-      const firstRes = await fetch(firstUrl);
-      const firstData = await firstRes.json();
+      const res = await fetch(url);
+      const data = await safeJson(res);
 
-      const totalCount = parseInt(
-        firstData?.getWaterMeasuringList?.totalCount || 0
-      );
-
-      const firstItems = firstData?.getWaterMeasuringList?.item;
-
-      // 👉 데이터 없으면 다음 연도로 넘어감
-      if (!firstItems || totalCount === 0) {
-        console.log(`${year}년 데이터 없음`);
+      if (!data || !data.getWaterMeasuringList) {
+        console.log(`❌ ${year} 데이터 없음 또는 API 오류`);
         continue;
       }
 
-      console.log(`✅ ${year}년 데이터 사용 (최신 선택됨)`);
+      const totalCount = parseInt(
+        data.getWaterMeasuringList.totalCount || 0
+      );
+
+      const firstItems = data.getWaterMeasuringList.item;
+
+      if (!firstItems || totalCount === 0) {
+        console.log(`❌ ${year} 데이터 없음`);
+        continue;
+      }
+
+      console.log(`✅ ${year} 데이터 사용`);
 
       usedYear = year;
 
@@ -51,41 +73,46 @@ async function loadData() {
 
       const totalPages = Math.min(
         Math.ceil(totalCount / 100),
-        50
+        30
       );
 
       for (let page = 2; page <= totalPages; page++) {
         try {
-          const url =
+          const pageUrl =
             `${BASE}?numOfRows=100&pageNo=${page}&serviceKey=${API_KEY}&resultType=json&wmyrList=${year}`;
 
-          const res = await fetch(url);
-          const data = await res.json();
+          const pageRes = await fetch(pageUrl);
+          const pageData = await safeJson(pageRes);
 
-          const items = data?.getWaterMeasuringList?.item;
+          const items = pageData?.getWaterMeasuringList?.item;
 
           if (items) {
             results.push(
               ...(Array.isArray(items) ? items : [items])
             );
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn(`페이지 실패: ${year}-${page}`);
+        }
       }
 
-      // 👉 여기 핵심
-      // 최신 "유효한 연도" 찾으면 즉시 종료
+      // 👉 가장 최신 데이터 1개만 사용
       break;
 
-    } catch (e) {
-      console.warn(`${year}년 실패`);
+    } catch (err) {
+      console.warn(`❌ ${year} 실패`);
     }
   }
 
   cachedData = results;
+  isLoading = false;
 
-  console.log(`총 ${cachedData.length}건 로드 완료 (${usedYear} 사용)`);
+  console.log(`🎯 완료: ${usedYear} 사용 / ${cachedData.length}건`);
 }
 
+/**
+ * API (안 죽는 구조)
+ */
 app.get('/api/water', (req, res) => {
   if (!cachedData.length) {
     return res.status(503).json({
@@ -93,16 +120,35 @@ app.get('/api/water', (req, res) => {
     });
   }
 
+  const year = req.query.year;
+
+  let result = cachedData;
+
+  if (year) {
+    result = cachedData.filter(
+      d => String(d.WMYR) === String(year)
+    );
+  }
+
   res.json({
     getWaterMeasuringList: {
-      item: cachedData
+      item: result
     }
   });
 });
 
+/**
+ * 서버 시작
+ */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`서버 실행: ${PORT}`);
-  loadData();
+  console.log(`🚀 서버 실행: ${PORT}`);
+
+  // Railway 안정성 때문에 딜레이 후 실행
+  setTimeout(() => {
+    loadData().catch(err => {
+      console.error('🔥 loadData 전체 실패:', err);
+    });
+  }, 3000);
 });

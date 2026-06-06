@@ -13,7 +13,8 @@ app.get('/api/water', (req, res) => {
   res.json({ ok: true });
 });
 
-const PORT = process.env.PORT || 8080;
+// ⭐ 핵심 수정
+const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
   console.log('server running on', PORT);

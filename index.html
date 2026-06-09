@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>물맑음 점수 (WQI) 대시보드</title>
+  <title>물맑음 점수 (WQI) 대시보드</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"/>
@@ -102,6 +102,7 @@
       border-radius: 20px; padding: 2rem;
       margin-bottom: 1.5rem; text-align: center;
       box-shadow: 0 4px 20px rgba(0,112,204,0.08);
+      transition: background 0.4s, border-color 0.4s;
     }
     .wqi-score { font-size: 5rem; font-weight: 900; color: #0070cc; line-height: 1; }
     .wqi-label { font-size: 0.9rem; color: #7a9ab8; margin-top: 0.5rem; }
@@ -121,12 +122,12 @@
     @media(max-width:700px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:450px){.kpi-grid{grid-template-columns:1fr}}
 
-.kpi-card {
-  background: #fff; border: 1.5px solid #e0eaf4;
-  border-radius: 14px; padding: 1.2rem;
-  box-shadow: 0 2px 8px rgba(0,100,200,0.05);
-  transition: transform 0.2s, background 0.4s, border-color 0.4s;
-}
+    .kpi-card {
+      background: #fff; border: 1.5px solid #e0eaf4;
+      border-radius: 14px; padding: 1.2rem;
+      box-shadow: 0 2px 8px rgba(0,100,200,0.05);
+      transition: transform 0.2s, background 0.4s, border-color 0.4s;
+    }
     .kpi-card:hover { transform: translateY(-3px); }
     .kpi-name { font-size: 0.75rem; color: #7a9ab8; margin-bottom: 0.4rem; }
     .kpi-value { font-size: 1.6rem; font-weight: 900; color: #0070cc; }
@@ -203,7 +204,7 @@
   <div class="header-left">
     <div class="header-icon">🧬</div>
     <div>
-     <div class="header-title">💧 물맑음 점수 (WQI) 대시보드</div>
+      <div class="header-title">💧 물맑음 점수 (WQI) 대시보드</div>
       <div class="header-sub">국립환경과학원 물환경 수질측정망 실측 데이터</div>
     </div>
   </div>
@@ -214,8 +215,8 @@
   <div class="loading-box" id="loading-box">
     <div class="spinner"></div>
     <div style="font-weight:700;margin-bottom:8px">전국 수질측정망 데이터 불러오는 중...</div>
-   <div style="font-size:0.75rem;color:#aac0d4;margin-top:8px">전국 하천 수질 데이터를 수집하고 있어요 🌊</div>
-<div style="font-size:0.72rem;color:#c0d4e8;margin-top:6px">환경부 물환경측정망 API 연동 중... (약 20~30초 소요)</div>
+    <div style="font-size:0.75rem;color:#aac0d4;margin-top:8px">전국 하천 수질 데이터를 수집하고 있어요 🌊</div>
+    <div style="font-size:0.72rem;color:#c0d4e8;margin-top:6px">환경부 물환경측정망 API 연동 중... (약 20~30초 소요)</div>
   </div>
 
   <div class="error-box" id="error-box" style="display:none"></div>
@@ -223,66 +224,68 @@
   <div id="main-content" style="display:none">
 
     <div class="year-tabs">
-  <button class="year-btn active" id="btn-2023" onclick="changeYear('2023')">2023년</button>
-  <button class="year-btn inactive" id="btn-2024" onclick="changeYear('2024')">2024년</button>
-  <button class="year-btn inactive" id="btn-2025" onclick="changeYear('2025')">2025년</button>
-</div>
-<div style="background:#fffbea;border-radius:10px;padding:0.8rem 1.2rem;margin-bottom:1rem;font-size:0.78rem;color:#7a6a00;line-height:1.8;border-left:4px solid #f0c800">
-  💡 <b>연도별 데이터 안내</b><br>
-  환경부 물환경측정망은 수질오염도 관보 게재 시 약 2개월 전 데이터를 공개합니다.<br>
-  · <b>2023년</b> — 전국 측정소 데이터가 가장 풍부하게 제공됩니다.<br>
-  · <b>2024년</b> — 일부 측정소 데이터가 제공됩니다.<br>
-  · <b>2025년</b> — 아직 공개된 데이터가 적어 일부 지역(강원도 등)만 표시될 수 있습니다.
-</div>
+      <button class="year-btn active" id="btn-2023" onclick="changeYear('2023')">2023년</button>
+      <button class="year-btn inactive" id="btn-2024" onclick="changeYear('2024')">2024년</button>
+      <button class="year-btn inactive" id="btn-2025" onclick="changeYear('2025')">2025년</button>
+    </div>
+    <div style="background:#fffbea;border-radius:10px;padding:0.8rem 1.2rem;margin-bottom:1rem;font-size:0.78rem;color:#7a6a00;line-height:1.8;border-left:4px solid #f0c800">
+      💡 <b>연도별 데이터 안내</b><br>
+      환경부 물환경측정망은 수질오염도 관보 게재 시 약 2개월 전 데이터를 공개합니다.<br>
+      · <b>2023년</b> — 전국 측정소 데이터가 가장 풍부하게 제공됩니다.<br>
+      · <b>2024년</b> — 일부 측정소 데이터가 제공됩니다.<br>
+      · <b>2025년</b> — 아직 공개된 데이터가 적어 일부 지역(강원도 등)만 표시될 수 있습니다.
+    </div>
+
     <div class="search-box">
       <input type="text" id="search-input" placeholder="🔍 측정소명 또는 지역명 검색 (예: 한강, 서울, 용인)" />
       <button onclick="doSearch()">검색</button>
       <div class="search-count" id="search-count"></div>
     </div>
 
-   <div class="section-title">💧 선택 측정소 물맑음 점수 (WQI)</div>
-<div style="background:#f0f7ff;border-radius:12px;padding:1rem 1.4rem;margin-bottom:1rem;font-size:0.83rem;color:#3a5a7a;line-height:1.8;border-left:4px solid #0070cc">
-  💧 <b>물맑음 점수(WQI)</b>는 DO·BOD·COD·pH·총질소·총인 6가지 수질 항목을 0~100점으로 압축한 자체 산정 지표예요.<br>
-  점수가 높을수록 깨끗한 물이며, 80점 이상은 매우좋음, 60점 이상은 보통, 40점 미만은 매우나쁨을 의미해요.
-</div>
-    <div class="wqi-score-box">
+    <div class="section-title">💧 선택 측정소 물맑음 점수 (WQI)</div>
+    <div style="background:#f0f7ff;border-radius:12px;padding:1rem 1.4rem;margin-bottom:1rem;font-size:0.83rem;color:#3a5a7a;line-height:1.8;border-left:4px solid #0070cc">
+      💧 <b>물맑음 점수(WQI)</b>는 DO·BOD·COD·pH·총질소·총인 6가지 수질 항목을 0~100점으로 압축한 자체 산정 지표예요.<br>
+      점수가 높을수록 깨끗한 물이며, 80점 이상은 매우좋음, 60점 이상은 보통, 40점 미만은 매우나쁨을 의미해요.
+    </div>
+
+    <div class="wqi-score-box" id="wqi-score-box">
       <div class="wqi-score" id="wqi-score">-</div>
-    <div class="wqi-label" id="wqi-label">아래 측정소 목록 또는 지도 마커를 클릭해보세요</div>
+      <div class="wqi-label" id="wqi-label">아래 측정소 목록 또는 지도 마커를 클릭해보세요</div>
       <div class="wqi-grade grade-normal" id="wqi-grade">-</div>
     </div>
 
     <div class="kpi-grid">
-      <div class="kpi-card">
+      <div class="kpi-card" id="card-do">
         <div class="kpi-name">DO · 용존산소</div>
         <div class="kpi-value" id="kpi-do">-<span class="kpi-unit"> mg/L</span></div>
         <div class="kpi-desc">높을수록 깨끗 (기준 5↑)</div>
         <div id="status-do"></div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card" id="card-bod">
         <div class="kpi-name">BOD · 생화학적 산소요구량</div>
         <div class="kpi-value" id="kpi-bod">-<span class="kpi-unit"> mg/L</span></div>
         <div class="kpi-desc">낮을수록 깨끗 (기준 3↓)</div>
         <div id="status-bod"></div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card" id="card-cod">
         <div class="kpi-name">COD · 화학적 산소요구량</div>
         <div class="kpi-value" id="kpi-cod">-<span class="kpi-unit"> mg/L</span></div>
         <div class="kpi-desc">낮을수록 깨끗 (기준 4↓)</div>
         <div id="status-cod"></div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card" id="card-ph">
         <div class="kpi-name">pH · 수소이온농도</div>
         <div class="kpi-value" id="kpi-ph">-</div>
         <div class="kpi-desc">6.5~8.5 정상 범위</div>
         <div id="status-ph"></div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card" id="card-tn">
         <div class="kpi-name">T-N · 총질소</div>
         <div class="kpi-value" id="kpi-tn">-<span class="kpi-unit"> mg/L</span></div>
         <div class="kpi-desc">낮을수록 깨끗 (기준 3↓)</div>
         <div id="status-tn"></div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card" id="card-tp">
         <div class="kpi-name">T-P · 총인</div>
         <div class="kpi-value" id="kpi-tp">-<span class="kpi-unit"> mg/L</span></div>
         <div class="kpi-desc">낮을수록 깨끗 (기준 0.1↓)</div>
@@ -302,7 +305,7 @@
       <canvas id="wqiChart" height="80"></canvas>
     </div>
 
-  <div class="section-title">📖 물맑음 점수(WQI)란?</div>
+    <div class="section-title">📖 물맑음 점수(WQI)란?</div>
     <div class="info-section">
       <p><b>수질 오염 지수(WQI, Water Quality Index)</b>는 DO·BOD·COD·pH·총질소·총인 6가지 항목을 하나의 점수(0~100)로 압축한 통합 지표입니다.</p>
       <div class="formula-box">WQI = (DO×0.22) + (BOD×0.19) + (COD×0.16) + (pH×0.18) + (T-N×0.13) + (T-P×0.12)</div>
@@ -351,18 +354,32 @@
   }
 
   function getGrade(w) {
-    if (w>=80) return {label:'매우좋음',cls:'grade-good'};
-    if (w>=60) return {label:'보통',cls:'grade-normal'};
-    if (w>=40) return {label:'나쁨',cls:'grade-bad'};
-    return {label:'매우나쁨',cls:'grade-danger'};
+    if (w>=80) return {label:'매우좋음', cls:'grade-good',   bg:'#e6faf4', border:'#00aa6e'};
+    if (w>=60) return {label:'보통',     cls:'grade-normal', bg:'#e8f4ff', border:'#0070cc'};
+    if (w>=40) return {label:'나쁨',     cls:'grade-bad',    bg:'#fff8e6', border:'#e08000'};
+    return             {label:'매우나쁨', cls:'grade-danger', bg:'#fff0f0', border:'#e03030'};
+  }
+
+  function getItemGrade(type, val) {
+    if (isNaN(val)) return null;
+    const G = {
+      good:   { bg:'#e6faf4', border:'#00aa6e', label:'좋음'    },
+      normal: { bg:'#e8f4ff', border:'#0070cc', label:'보통'    },
+      bad:    { bg:'#fff8e6', border:'#e08000', label:'나쁨'    },
+      danger: { bg:'#fff0f0', border:'#e03030', label:'매우나쁨' },
+    };
+    switch(type) {
+      case 'do':  return val>=7 ? G.good : val>=5 ? G.normal : val>=3 ? G.bad : G.danger;
+      case 'bod': return val<=1 ? G.good : val<=3 ? G.normal : val<=5 ? G.bad : G.danger;
+      case 'cod': return val<=2 ? G.good : val<=4 ? G.normal : val<=8 ? G.bad : G.danger;
+      case 'ph':  return (val>=6.5&&val<=8.5) ? G.good : (val>=6&&val<=9) ? G.normal : (val>=5.5&&val<=9.5) ? G.bad : G.danger;
+      case 'tn':  return val<=1 ? G.good : val<=3 ? G.normal : val<=6 ? G.bad : G.danger;
+      case 'tp':  return val<=0.02 ? G.good : val<=0.1 ? G.normal : val<=0.3 ? G.bad : G.danger;
+      default: return null;
+    }
   }
 
   const COLORS = {'grade-good':'#00aa6e','grade-normal':'#0070cc','grade-bad':'#e08000','grade-danger':'#e03030'};
-
-  function badge(txt, good) {
-    const c = good?'#00aa6e':'#e03030';
-    return `<span class="kpi-status" style="background:${good?'#e6faf4':'#fff0f0'};color:${c};border:1px solid ${c}">${txt}</span>`;
-  }
 
   async function changeYear(year) {
     if (year === currentYear) return;
@@ -406,51 +423,59 @@
   function selectStation(idx) {
     const d = filteredData[idx];
     if (!d) return;
-    document.querySelectorAll('.station-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
+    document.querySelectorAll('.station-item').forEach((el,i) => el.classList.toggle('active', i===idx));
 
     const wqi = calcWQI(d);
     const gr  = getGrade(wqi);
     document.getElementById('wqi-score').textContent = wqi;
     document.getElementById('wqi-label').textContent = `${d.PT_NM} (${d.WMCYMD||''} 측정)`;
     const ge = document.getElementById('wqi-grade');
-    ge.textContent = gr.label; ge.className = 'wqi-grade '+gr.cls;
+    ge.textContent = gr.label;
+    ge.className = 'wqi-grade ' + gr.cls;
+
+    // 큰 카드 배경색
+    const scoreBox = document.getElementById('wqi-score-box');
+    scoreBox.style.background  = gr.bg;
+    scoreBox.style.borderColor = gr.border;
 
     const v = {
-      do:parseFloat(d.ITEM_DOC), bod:parseFloat(d.ITEM_BOD),
-      cod:parseFloat(d.ITEM_COD), ph:parseFloat(d.ITEM_PH),
-      tn:parseFloat(d.ITEM_TN), tp:parseFloat(d.ITEM_TP)
+      do:  parseFloat(d.ITEM_DOC),
+      bod: parseFloat(d.ITEM_BOD),
+      cod: parseFloat(d.ITEM_COD),
+      ph:  parseFloat(d.ITEM_PH),
+      tn:  parseFloat(d.ITEM_TN),
+      tp:  parseFloat(d.ITEM_TP)
     };
-    const fmt = (val,unit) => (isNaN(val)?'-':val)+(unit?`<span class="kpi-unit"> ${unit}</span>`:'');
-    document.getElementById('kpi-do').innerHTML  = fmt(v.do,'mg/L');
-    document.getElementById('kpi-bod').innerHTML = fmt(v.bod,'mg/L');
-    document.getElementById('kpi-cod').innerHTML = fmt(v.cod,'mg/L');
-    document.getElementById('kpi-ph').innerHTML  = fmt(v.ph,'');
-    document.getElementById('kpi-tn').innerHTML  = fmt(v.tn,'mg/L');
-    document.getElementById('kpi-tp').innerHTML  = fmt(v.tp,'mg/L');
+    const fmt = (val, unit) => (isNaN(val)?'-':val) + (unit ? `<span class="kpi-unit"> ${unit}</span>` : '');
+    document.getElementById('kpi-do').innerHTML  = fmt(v.do,  'mg/L');
+    document.getElementById('kpi-bod').innerHTML = fmt(v.bod, 'mg/L');
+    document.getElementById('kpi-cod').innerHTML = fmt(v.cod, 'mg/L');
+    document.getElementById('kpi-ph').innerHTML  = fmt(v.ph,  '');
+    document.getElementById('kpi-tn').innerHTML  = fmt(v.tn,  'mg/L');
+    document.getElementById('kpi-tp').innerHTML  = fmt(v.tp,  'mg/L');
 
-    document.getElementById('status-do').innerHTML  = !isNaN(v.do)  ? badge(v.do>=5?'정상':'주의',v.do>=5) : '';
-    document.getElementById('status-bod').innerHTML = !isNaN(v.bod) ? badge(v.bod<=3?'정상':'주의',v.bod<=3) : '';
-    document.getElementById('status-cod').innerHTML = !isNaN(v.cod) ? badge(v.cod<=4?'정상':'주의',v.cod<=4) : '';
-    document.getElementById('status-ph').innerHTML  = !isNaN(v.ph)  ? badge(v.ph>=6.5&&v.ph<=8.5?'정상':'주의',v.ph>=6.5&&v.ph<=8.5) : '';
-    document.getElementById('status-tn').innerHTML  = !isNaN(v.tn)  ? badge(v.tn<=3?'정상':'주의',v.tn<=3) : '';
-    document.getElementById('status-tp').innerHTML  = !isNaN(v.tp)  ? badge(v.tp<=0.1?'정상':'주의',v.tp<=0.1) : '';
+    // 6개 카드 개별 등급 색상
+    ['do','bod','cod','ph','tn','tp'].forEach(type => {
+      const val  = v[type];
+      const igr  = getItemGrade(type, val);
+      const card = document.getElementById(`card-${type}`);
+      if (igr) {
+        card.style.background  = igr.bg;
+        card.style.borderColor = igr.border;
+        document.getElementById(`status-${type}`).innerHTML =
+          `<span class="kpi-status" style="background:${igr.bg};color:${igr.border};border:1px solid ${igr.border}">${igr.label}</span>`;
+      } else {
+        card.style.background  = '#fff';
+        card.style.borderColor = '#e0eaf4';
+        document.getElementById(`status-${type}`).innerHTML = '';
+      }
+    });
 
     updateChart(d);
-    //
-    const CARD_BG = {
-      'grade-good':   { bg: '#e6faf4', border: '#00aa6e' },
-      'grade-normal': { bg: '#e8f4ff', border: '#0070cc' },
-      'grade-bad':    { bg: '#fff8e6', border: '#e08000' },
-      'grade-danger': { bg: '#fff0f0', border: '#e03030' },
-    };
-    const cardStyle = CARD_BG[gr.cls];
-    document.querySelectorAll('.kpi-card').forEach(card => {
-      card.style.background  = cardStyle.bg;
-      card.style.borderColor = cardStyle.border;
-    });
-    const lat = toDecimal(d.LAT_DGR,d.LAT_MIN,d.LAT_SEC);
-    const lng = toDecimal(d.LON_DGR,d.LON_MIN,d.LON_SEC);
-    if (lat>34.5&&lat<38.5&&lng>126&&lng<130) map.flyTo([lat,lng],12,{duration:1});
+
+    const lat = toDecimal(d.LAT_DGR, d.LAT_MIN, d.LAT_SEC);
+    const lng = toDecimal(d.LON_DGR, d.LON_MIN, d.LON_SEC);
+    if (lat>34.5 && lat<38.5 && lng>126 && lng<130) map.flyTo([lat,lng], 12, {duration:1});
   }
 
   function updateChart(d) {
@@ -459,10 +484,26 @@
     const values = [d.ITEM_DOC,d.ITEM_BOD,d.ITEM_COD,d.ITEM_PH,d.ITEM_TN,d.ITEM_TP].map(v=>parseFloat(v)||0);
     const colors = ['#0070cc','#e08000','#e03030','#00aa6e','#9b59b6','#16a085'];
     if (wqiChart) wqiChart.destroy();
-    wqiChart = new Chart(document.getElementById('wqiChart').getContext('2d'),{
-      type:'bar',
-      data:{labels,datasets:[{data:values,backgroundColor:colors.map(c=>c+'99'),borderColor:colors,borderWidth:2,borderRadius:6}]},
-      options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#f0f6ff'},ticks:{color:'#7a9ab8'}},y:{grid:{color:'#f0f6ff'},ticks:{color:'#7a9ab8'}}}}
+    wqiChart = new Chart(document.getElementById('wqiChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors.map(c => c+'99'),
+          borderColor: colors,
+          borderWidth: 2,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color:'#f0f6ff' }, ticks: { color:'#7a9ab8' } },
+          y: { grid: { color:'#f0f6ff' }, ticks: { color:'#7a9ab8' } }
+        }
+      }
     });
   }
 
@@ -474,24 +515,24 @@
         const count = cluster.getChildCount();
         return L.divIcon({
           html:`<div style="background:#0070cc;color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.2)">${count}</div>`,
-          iconSize:[40,40],iconAnchor:[20,20]
+          iconSize:[40,40], iconAnchor:[20,20]
         });
       }
     });
 
-    data.forEach((d,idx)=>{
-      const lat = toDecimal(d.LAT_DGR,d.LAT_MIN,d.LAT_SEC);
-      const lng = toDecimal(d.LON_DGR,d.LON_MIN,d.LON_SEC);
+    data.forEach((d) => {
+      const lat = toDecimal(d.LAT_DGR, d.LAT_MIN, d.LAT_SEC);
+      const lng = toDecimal(d.LON_DGR, d.LON_MIN, d.LON_SEC);
       if (isNaN(lat)||isNaN(lng)||lat<34.5||lat>38.5||lng<126||lng>130) return;
 
       const wqi = calcWQI(d);
       const gr  = getGrade(wqi);
       const col = COLORS[gr.cls];
 
-      const marker = L.marker([lat,lng],{icon:L.divIcon({
-        className:'',
-        html:`<div style="background:${col};color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.25)">${wqi}</div>`,
-        iconSize:[40,40],iconAnchor:[20,20]
+      const marker = L.marker([lat,lng], {icon: L.divIcon({
+        className: '',
+        html: `<div style="background:${col};color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.25)">${wqi}</div>`,
+        iconSize:[40,40], iconAnchor:[20,20]
       })});
 
       marker.bindPopup(`
@@ -505,9 +546,9 @@
           <span style="color:#aac0d4;font-size:0.72rem">📅 ${d.WMCYMD||''} 측정</span>
         </div>
       `);
-      marker.on('click',()=>{
+      marker.on('click', () => {
         const realIdx = filteredData.indexOf(d);
-        if (realIdx>=0) selectStation(realIdx);
+        if (realIdx >= 0) selectStation(realIdx);
       });
       clusterGroup.addLayer(marker);
     });
@@ -515,18 +556,20 @@
   }
 
   function initMap(data) {
-    map = L.map('map').setView([36.5,127.8],7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+    map = L.map('map').setView([36.5, 127.8], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap'}).addTo(map);
     updateMap(data);
   }
 
   function renderList(data) {
-    if (data.length===0) {
-      document.getElementById('station-list').innerHTML='<div class="no-result">🔍 검색 결과가 없어요</div>';
+    if (data.length === 0) {
+      document.getElementById('station-list').innerHTML = '<div class="no-result">🔍 검색 결과가 없어요</div>';
       return;
     }
-    document.getElementById('station-list').innerHTML = data.map((d,idx)=>{
-      const wqi=calcWQI(d), gr=getGrade(wqi), col=COLORS[gr.cls];
+    document.getElementById('station-list').innerHTML = data.map((d, idx) => {
+      const wqi = calcWQI(d);
+      const gr  = getGrade(wqi);
+      const col = COLORS[gr.cls];
       return `<div class="station-item" onclick="selectStation(${idx})">
         <div>
           <div class="station-name">${d.PT_NM}</div>
@@ -551,7 +594,7 @@
       document.getElementById('search-count').textContent = `전체 ${allData.length}개`;
       document.getElementById('loading-box').style.display = 'none';
       document.getElementById('main-content').style.display = 'block';
-      setTimeout(()=>{ initMap(allData); renderList(filteredData); selectStation(0); }, 100);
+      setTimeout(() => { initMap(allData); renderList(filteredData); selectStation(0); }, 100);
     } catch(err) {
       document.getElementById('loading-box').style.display = 'none';
       document.getElementById('error-box').style.display = 'block';
@@ -559,9 +602,9 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', ()=>{
+  document.addEventListener('DOMContentLoaded', () => {
     fetchData();
-    document.getElementById('search-input').addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
+    document.getElementById('search-input').addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
   });
 </script>
 </body>

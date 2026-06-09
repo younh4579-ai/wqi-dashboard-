@@ -121,12 +121,12 @@
     @media(max-width:700px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:450px){.kpi-grid{grid-template-columns:1fr}}
 
-    .kpi-card {
-      background: #fff; border: 1.5px solid #e0eaf4;
-      border-radius: 14px; padding: 1.2rem;
-      box-shadow: 0 2px 8px rgba(0,100,200,0.05);
-      transition: transform 0.2s;
-    }
+.kpi-card {
+  background: #fff; border: 1.5px solid #e0eaf4;
+  border-radius: 14px; padding: 1.2rem;
+  box-shadow: 0 2px 8px rgba(0,100,200,0.05);
+  transition: transform 0.2s, background 0.4s, border-color 0.4s;
+}
     .kpi-card:hover { transform: translateY(-3px); }
     .kpi-name { font-size: 0.75rem; color: #7a9ab8; margin-bottom: 0.4rem; }
     .kpi-value { font-size: 1.6rem; font-weight: 900; color: #0070cc; }
@@ -436,6 +436,18 @@
     document.getElementById('status-tp').innerHTML  = !isNaN(v.tp)  ? badge(v.tp<=0.1?'정상':'주의',v.tp<=0.1) : '';
 
     updateChart(d);
+    //
+    const CARD_BG = {
+      'grade-good':   { bg: '#e6faf4', border: '#00aa6e' },
+      'grade-normal': { bg: '#e8f4ff', border: '#0070cc' },
+      'grade-bad':    { bg: '#fff8e6', border: '#e08000' },
+      'grade-danger': { bg: '#fff0f0', border: '#e03030' },
+    };
+    const cardStyle = CARD_BG[gr.cls];
+    document.querySelectorAll('.kpi-card').forEach(card => {
+      card.style.background  = cardStyle.bg;
+      card.style.borderColor = cardStyle.border;
+    });
     const lat = toDecimal(d.LAT_DGR,d.LAT_MIN,d.LAT_SEC);
     const lng = toDecimal(d.LON_DGR,d.LON_MIN,d.LON_SEC);
     if (lat>34.5&&lat<38.5&&lng>126&&lng<130) map.flyTo([lat,lng],12,{duration:1});

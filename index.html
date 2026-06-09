@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>수질 오염 지수 (WQI) 대시보드</title>
+ <title>물맑음 점수 (WQI) 대시보드</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"/>
@@ -203,7 +203,7 @@
   <div class="header-left">
     <div class="header-icon">🧬</div>
     <div>
-      <div class="header-title">수질 오염 지수 (WQI) 대시보드</div>
+     <div class="header-title">💧 물맑음 점수 (WQI) 대시보드</div>
       <div class="header-sub">국립환경과학원 물환경 수질측정망 실측 데이터</div>
     </div>
   </div>
@@ -214,7 +214,8 @@
   <div class="loading-box" id="loading-box">
     <div class="spinner"></div>
     <div style="font-weight:700;margin-bottom:8px">전국 수질측정망 데이터 불러오는 중...</div>
-    <div style="font-size:0.75rem;color:#aac0d4">잠시만 기다려주세요</div>
+   <div style="font-size:0.75rem;color:#aac0d4;margin-top:8px">전국 하천 수질 데이터를 수집하고 있어요 🌊</div>
+<div style="font-size:0.72rem;color:#c0d4e8;margin-top:6px">환경부 물환경측정망 API 연동 중... (약 20~30초 소요)</div>
   </div>
 
   <div class="error-box" id="error-box" style="display:none"></div>
@@ -233,10 +234,14 @@
       <div class="search-count" id="search-count"></div>
     </div>
 
-    <div class="section-title">📊 선택 측정소 WQI 점수</div>
+   <div class="section-title">💧 선택 측정소 물맑음 점수 (WQI)</div>
+<div style="background:#f0f7ff;border-radius:12px;padding:1rem 1.4rem;margin-bottom:1rem;font-size:0.83rem;color:#3a5a7a;line-height:1.8;border-left:4px solid #0070cc">
+  💧 <b>물맑음 점수(WQI)</b>는 DO·BOD·COD·pH·총질소·총인 6가지 수질 항목을 0~100점으로 압축한 자체 산정 지표예요.<br>
+  점수가 높을수록 깨끗한 물이며, 80점 이상은 매우좋음, 60점 이상은 보통, 40점 미만은 매우나쁨을 의미해요.
+</div>
     <div class="wqi-score-box">
       <div class="wqi-score" id="wqi-score">-</div>
-      <div class="wqi-label" id="wqi-label">측정소를 선택하세요</div>
+    <div class="wqi-label" id="wqi-label">아래 측정소 목록 또는 지도 마커를 클릭해보세요</div>
       <div class="wqi-grade grade-normal" id="wqi-grade">-</div>
     </div>
 
@@ -291,7 +296,7 @@
       <canvas id="wqiChart" height="80"></canvas>
     </div>
 
-    <div class="section-title">📖 WQI란 무엇인가?</div>
+  <div class="section-title">📖 물맑음 점수(WQI)란?</div>
     <div class="info-section">
       <p><b>수질 오염 지수(WQI, Water Quality Index)</b>는 DO·BOD·COD·pH·총질소·총인 6가지 항목을 하나의 점수(0~100)로 압축한 통합 지표입니다.</p>
       <div class="formula-box">WQI = (DO×0.22) + (BOD×0.19) + (COD×0.16) + (pH×0.18) + (T-N×0.13) + (T-P×0.12)</div>
